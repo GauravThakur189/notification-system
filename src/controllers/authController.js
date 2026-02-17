@@ -3,7 +3,7 @@ const {
     loginUser,
     refreshAccessToken,
     logoutUser,
-} = require('../services/auth.service');
+} = require('../services/authentication.js');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

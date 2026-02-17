@@ -5,6 +5,8 @@ require('dotenv').config();
 // ─── Token Generators ─────────────────────────────────────────────────────────
 
 const generateAccessToken = (user) => {
+    console.log("jwt secret", process.env.JWT_SECRET);
+
     return jwt.sign(
         { id: user.id, email: user.email, role: user.role },
         process.env.JWT_SECRET,
@@ -13,9 +15,11 @@ const generateAccessToken = (user) => {
 };
 
 const generateRefreshToken = (user) => {
+    console.log("jwt refresh secret", process.env.JWT_REFRESH_SECRET);
+
     return jwt.sign(
         { id: user.id },
-        process.env.JWT_REFRESH_SECRET,
+        process.env.JWT_REFRESH_SECRET || refreshToken,
         { expiresIn: '7d' }
     );
 };

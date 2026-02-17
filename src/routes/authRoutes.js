@@ -7,8 +7,8 @@ const {
     refresh,
     logout,
     getMe,
-} = require('../controllers/auth.controller');
-const { protect } = require('../middleware/auth.middleware');
+} = require('../controllers/authController.js');
+const { protect } = require('../middleware/authMiddleware.js');
 
 const router = express.Router();
 
