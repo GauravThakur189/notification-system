@@ -7,6 +7,7 @@ require('dotenv').config();
 
 // ─── JWT Strategy ─────────────────────────────────────────────────────────────
 // Validates Bearer token on protected routes
+console.log("step 1");
 
 passport.use(new JwtStrategy(
     {
@@ -25,7 +26,7 @@ passport.use(new JwtStrategy(
 ));
 
 // ─── Google OAuth 2.0 Strategy ────────────────────────────────────────────────
-
+console.log("step 2");
 passport.use(new GoogleStrategy(
     {
         clientID: process.env.GOOGLE_CLIENT_ID,
@@ -45,5 +46,5 @@ passport.use(new GoogleStrategy(
         }
     }
 ));
-
+console.log("step 3");
 module.exports = passport;

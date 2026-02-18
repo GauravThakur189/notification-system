@@ -1,5 +1,5 @@
 const express = require('express');
-const passport = require('../config/passport');
+// const passport = require('../config/passport.js')
 const {
     register,
     login,
@@ -7,6 +7,7 @@ const {
     refresh,
     logout,
     getMe,
+    googleRedirect,
 } = require('../controllers/authController.js');
 const { protect } = require('../middleware/authMiddleware.js');
 
@@ -19,15 +20,10 @@ router.post('/refresh', refresh);
 router.post('/logout', protect, logout);
 router.get('/me', protect, getMe);
 
-// ─── Google OAuth 2.0 ─────────────────────────────────────────────────────────
-router.get('/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+// ─── Google OAuth 2.0 (Manual) ────────────────────────────────────────────────
+router.get('/google', googleRedirect);
 
-router.get('/google/callback',
-    passport.authenticate('google', { session: false, failureRedirect: '/auth/failure' }),
-    googleCallback
-);
+router.get('/google/callback', googleCallback);
 
 router.get('/failure', (req, res) => {
     res.status(401).json({ success: false, message: 'Google authentication failed.' });

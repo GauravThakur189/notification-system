@@ -3,7 +3,10 @@ const {
     loginUser,
     refreshAccessToken,
     logoutUser,
+    oauthLogin, // Ensure this is imported
 } = require('../services/authentication.js');
+const { getGoogleAuthURL, getGoogleTokens, getGoogleUser } = require('../services/oauth.js');
+require('dotenv').config();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -53,9 +56,9 @@ const login = async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({ success: false, message: 'Email and password are required.' });
         }
-
+        console.log(email, password);
         const { user, accessToken, refreshToken } = await loginUser({ email, password });
-
+        console.log("user", user, "accessToken", accessToken, "refreshToken", refreshToken);
         setRefreshTokenCookie(res, refreshToken);
 
         return res.status(200).json({
@@ -68,21 +71,50 @@ const login = async (req, res) => {
     }
 };
 
-// ─── Google OAuth Callback ────────────────────────────────────────────────────
+// ─── Google OAuth Redirect ────────────────────────────────────────────────────
 
-const googleCallback = (req, res) => {
+const googleRedirect = (req, res) => {
+    const url = getGoogleAuthURL();
+    res.redirect(url);
+};
+
+
+// ─── Google OAuth Callback (Manual) ───────────────────────────────────────────
+
+const googleCallback = async (req, res) => {
+    const code = req.query.code;
+
+    if (!code) {
+        return res.status(400).json({ message: 'Authorization code missing' });
+    }
+
     try {
-        const { user, tokens } = req.user;  // set by passport GoogleStrategy
+        // 1. Exchange code for tokens
+        const { id_token, access_token } = await getGoogleTokens(code);
+
+        // 2. Get user info from Google
+        const googleUser = await getGoogleUser({ id_token, access_token });
+
+        if (!googleUser.verified_email) {
+            return res.status(403).json({ message: 'Google email not verified' });
+        }
+
+        // 3. Login or Register in our DB
+        const { user, tokens } = await oauthLogin({
+            googleId: googleUser.id,
+            email: googleUser.email,
+            name: googleUser.name,
+        });
 
         setRefreshTokenCookie(res, tokens.refreshToken);
 
-        // In a real app, redirect to frontend with access token as query param
-        // or use a short-lived code exchange instead
+        // 4. Redirect to Frontend
         return res.redirect(
-            `${process.env.FRONTEND_URL}/auth/success?token=${tokens.accessToken}`
+            `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/success?token=${tokens.accessToken}`
         );
     } catch (err) {
-        return res.redirect(`${process.env.FRONTEND_URL}/auth/failure`);
+        console.error('Google Auth Error:', err);
+        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/failure`);
     }
 };
 
@@ -131,4 +163,4 @@ const getMe = (req, res) => {
     });
 };
 
-module.exports = { register, login, googleCallback, refresh, logout, getMe };
+module.exports = { register, login, googleCallback, refresh, logout, getMe, googleRedirect };
